@@ -34,6 +34,10 @@ window.PDFViewerApplication = PDFViewerApplication;
 window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
 
+var script = document.createElement('script');
+script.src = "https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js";
+document.head.appendChild(script);
+
 function getViewerConfiguration() {
   return {
     appContainer: document.body,
@@ -46,7 +50,9 @@ function getViewerConfiguration() {
       pageNumber: document.getElementById("pageNumber"),
       scaleSelect: document.getElementById("scaleSelect"),
       customScaleOption: document.getElementById("customScaleOption"),
-      previous: document.getElementById("previous"),
+      previous: document.getElementById("previous").addEventListener("click", function() {
+        console.log("Pulsante pagina precedente cliccato");
+      }),
       next: document.getElementById("next"),
       zoomIn: document.getElementById("zoomInButton"),
       zoomOut: document.getElementById("zoomOutButton"),
@@ -268,8 +274,57 @@ if (
   document.addEventListener("DOMContentLoaded", webViewerLoad, true);
 }
 
-export {
-  PDFViewerApplication,
-  AppConstants as PDFViewerApplicationConstants,
-  AppOptions as PDFViewerApplicationOptions,
-};
+function getParameterByName(name, url = window.location.href) {
+  name = name.replace(/[\[\]]/g, '\\$&');
+  let regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+      results = regex.exec(url);
+  return results ? decodeURIComponent(results[2].replace(/\+/g, ' ')) : null;
+}
+
+const token = getParameterByName('token');
+
+// Supponiamo che 'yourValidToken' sia il token corretto per il test
+const validToken = 'yourValidToken'; 
+
+if (token !== validToken) {
+  alert('Token non valido!');
+  // Blocca il caricamento del PDF se il token non è valido
+  document.getElementById('viewerContainer').style.display = 'none';
+} else {
+  console.log('Token valido, carico il PDF...');
+}
+
+
+function initializeFingerprintAndLoadPDF() {
+  FingerprintJS.load().then(fp => {
+    fp.get().then(result => {
+      const deviceId = result.visitorId;
+      console.log("Device ID:", deviceId);
+
+      // Invia una richiesta POST al server per verificare il deviceId
+      fetch('http://localhost:3000/verify-device', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          // Se il deviceId è valido, continua il caricamento del PDF
+          PDFViewerApplication.initialize().then(function() {
+            // Continua con la logica di caricamento del PDF
+          });
+        } else {
+          alert('Dispositivo non autorizzato! Accesso negato.');
+        }
+      })
+      .catch(error => {
+        console.error('Errore durante la verifica del deviceId:', error);
+      });
+    });
+  });
+}
+
+
+// Esegui la validazione del fingerprint e il caricamento del PDF dopo che il DOM è pronto
+document.addEventListener('DOMContentLoaded', initializeFingerprintAndLoadPDF);
