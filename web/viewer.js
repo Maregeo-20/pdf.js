@@ -296,34 +296,36 @@ if (token !== validToken) {
 
 
 function initializeFingerprintAndLoadPDF() {
+  // Recupera il fingerprint del dispositivo con FingerprintJS
   FingerprintJS.load().then(fp => {
     fp.get().then(result => {
       const deviceId = result.visitorId;
       console.log("Device ID:", deviceId);
 
-      // Invia una richiesta POST al server per verificare il deviceId
-      fetch('http://localhost:3000/verify-device', {
+      // Invia il deviceId al server per la verifica
+      fetch('/verify-device', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ deviceId }),
       })
       .then(response => response.json())
       .then(data => {
-        if (data.valid) {
-          // Se il deviceId è valido, continua il caricamento del PDF
-          PDFViewerApplication.initialize().then(function() {
-            // Continua con la logica di caricamento del PDF
-          });
-        } else {
+        if (!data.authorized) {
           alert('Dispositivo non autorizzato! Accesso negato.');
+          throw new Error("Dispositivo non autorizzato, caricamento PDF interrotto.");
         }
-      })
-      .catch(error => {
-        console.error('Errore durante la verifica del deviceId:', error);
+
+        // Se il deviceId è valido, prosegui con il caricamento del PDF
+        PDFViewerApplication.initialize().then(function() {
+          // Continua con la logica di caricamento del PDF
+        });
       });
     });
   });
 }
+
 
 
 // Esegui la validazione del fingerprint e il caricamento del PDF dopo che il DOM è pronto
