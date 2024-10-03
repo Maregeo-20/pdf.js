@@ -18,7 +18,7 @@ app.post('/verify-device', (req, res) => {
 });
 
 // Lista di deviceId autorizzati (da personalizzare)
-const authorizedDevices = ['validDeviceId1', 'validDeviceId2'];
+const authorizedDevices = ['4243a58a616faed7b90b20790892a9c4', 'validDeviceId2'];
 
 // Endpoint per verificare il deviceId
 app.post('/verify-device', (req, res) => {
