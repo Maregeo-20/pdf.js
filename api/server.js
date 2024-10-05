@@ -8,7 +8,8 @@ app.use(express.json());
 // Endpoint per verificare il deviceId
 app.post('/verify-device', (req, res) => {
   const { deviceId } = req.body;
-  const validDeviceId = 'validDeviceId'; // Inserisci il tuo deviceId valido
+  console.log("Received deviceId:", deviceId);
+  const validDeviceId = '4243a58a616faed7b90b20790892a9c4'; // Inserisci il tuo deviceId valido
 
   if (deviceId === validDeviceId) {
     res.status(200).json({ valid: true });
