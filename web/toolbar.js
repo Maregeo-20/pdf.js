@@ -58,6 +58,7 @@ class Toolbar {
   constructor(options, eventBus, toolbarDensity = 0) {
     this.#opts = options;
     this.eventBus = eventBus;
+
     const buttons = [
       { element: options.previous, eventName: "previouspage" },
       { element: options.next, eventName: "nextpage" },
@@ -65,6 +66,8 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      { element: options.uploadButton, eventName: null },
+    
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",
@@ -179,33 +182,42 @@ class Toolbar {
 
   #bindListeners(buttons) {
     const { eventBus } = this;
-    const {
-      editorHighlightColorPicker,
-      editorHighlightButton,
-      pageNumber,
-      scaleSelect,
-    } = this.#opts;
+    const { pageNumber, scaleSelect, fileInput } = this.#opts;
     const self = this;
 
-    // The buttons within the toolbar.
     for (const { element, eventName, eventDetails, telemetry } of buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
           eventBus.dispatch(eventName, {
             source: this,
             ...eventDetails,
-            // evt.detail is the number of clicks.
             isFromKeyboard: evt.detail === 0,
           });
         }
-        if (telemetry) {
-          eventBus.dispatch("reporttelemetry", {
-            source: this,
-            details: telemetry,
-          });
+
+        // Se è stato cliccato il pulsante di upload, apri il file picker
+        if (element === this.#opts.uploadButton) {
+          fileInput.click();
         }
       });
     }
+
+    fileInput.addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (file && file.type === "application/pdf") {
+        const fileReader = new FileReader();
+
+        fileReader.onload = function (e) {
+          const typedarray = new Uint8Array(e.target.result);
+          // Carica il PDF nel visualizzatore
+          PDFViewerApplication.open(typedarray);
+        };
+
+        fileReader.readAsArrayBuffer(file);
+      } else {
+        alert("Per favore seleziona un file PDF valido.");
+      }
+    });
     // The non-button elements within the toolbar.
     pageNumber.addEventListener("click", function () {
       this.select();
